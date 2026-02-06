@@ -1,130 +1,236 @@
-# PowerShellによるM365構築準備
+# 00_Initialization — 実行環境セットアップ & 接続テスト（設定変更なし）
 
-## 最新の PowerShell 7 をインストールする
+## ねらい
 
-Windows 11標準の5.1ではなく、最新の7をインストールします。
+* **A：環境整備**（PS7 / モジュール導入・保守）を行う
+
+  * 基本は「最初の 1 回」＋「保守（必要時）」
+* **B：接続テスト**（Graph / EXO / SPO / Teams）を行う
+
+  * 01 以降で繰り返し発生する接続操作を、**シンプルな型**として確立する
+* 本章は **設定変更を行わない**（接続・参照のみ）
+
+---
+
+# A：環境整備（端末側の準備）
+
+## A-1. PowerShell 7 のインストール
 
 ```powershell
-# PowerShell 7をコマンドでインストール（実行後、指示に従ってください）
 winget install --id Microsoft.Powershell --source winget
 ```
 
-> 注意: インストール完了後、一度すべてのウィンドウを閉じ、青いアイコン（5.1）ではなく黒いアイコンの「PowerShell 7」を右クリックして「管理者として実行」で開き直してください。
+## A-2. PS7 を管理者で起動し直す（目視）
 
-## モジュールのインストール
+* いったん PowerShell ウィンドウをすべて閉じる
+* **スタートメニューのアプリ一覧か「PowerShell 7 (x64)」** を「管理者として実行」で起動する
+
+## A-3. PS7 起動確認（目視）
 
 ```powershell
-# 実行ポリシーの変更（スクリプト実行を許可）
-Set-ExecutionPolicy RemoteSigned -Force
-
-# Microsoft Graph (基本管理)
-Install-Module -Name Microsoft.Graph -AllowClobber -Force -Scope CurrentUser
-
-# Exchange Online (メール管理)
-Install-Module -Name ExchangeOnlineManagement -AllowClobber -Force -Scope CurrentUser
-
-# Microsoft Teams (Teams管理)
-Install-Module -Name MicrosoftTeams -AllowClobber -Force -Scope CurrentUser
-
-# SharePoint Online (SharePoint/OneDrive管理)
-Install-Module -Name PnP.PowerShell -AllowClobber -Force -Scope CurrentUser
+$PSVersionTable.PSVersion
 ```
 
-## 接続コマンド
+---
+
+## A-4. モジュール導入方針（重要）
+
+* `Install-Module` は **必ず `-Scope AllUsers`**
+
+  * `CurrentUser` は OneDrive の Documents 配下に入り得て、同期・競合の影響を受ける可能性があるため
+* SharePoint Online 管理モジュール（`Microsoft.Online.SharePoint.PowerShell`）は **WinPS(5.1) 互換**が必要
+* PnP.PowerShell は使用しない（**純正モジュールのみ**）
+
+---
+
+## A-5. モジュールの導入（初回）
+
+### Microsoft Graph
 
 ```powershell
-# Microsoft Graphへの接続（必要な権限をスコープで指定）
-Connect-MgGraph -Scopes "User.ReadWrite.All", "Group.ReadWrite.All", "Directory.ReadWrite.All", "Organization.Read.All"
-
-# Exchange Onlineへの接続
-Connect-ExchangeOnline
+Install-Module Microsoft.Graph -Repository PSGallery -Scope AllUsers -Force
 ```
 
-## 接続時の認証パターン解説
-
-M365管理における認証は、以下の3つのパターンが主流です。
-
-### ① インタラクティブ認証（ブラウザ認証）
-
-**用途：** 初回の設定、単発の作業、検証環境。
-最も一般的で、多要素認証（MFA）にも対応しています。
-
-- **メリット：** 設定が不要。コマンドを打つだけでサインイン画面が出る。
-- **デメリット：** スクリプトの自動実行（スケジュール実行）ができない。
+### Exchange Online
 
 ```powershell
-# 基本的な接続（ブラウザが起動し、ログインを求められる）
+Install-Module ExchangeOnlineManagement -Repository PSGallery -Scope AllUsers -Force
+```
 
-# Graphに接続（初回は承認画面が出ます）
-Connect-MgGraph -Scopes "User.ReadWrite.All", "Group.ReadWrite.All", "Directory.ReadWrite.All", "Organization.Read.All"
+### Microsoft Teams
 
-# Exchange Onlineに接続（ご自身のメールアドレスに書き換えてください）
-Connect-ExchangeOnline -UserPrincipalName "admin@example.com"
+```powershell
+Install-Module MicrosoftTeams -Repository PSGallery -Scope AllUsers -Force
+```
 
-# Teamsに接続
+### SharePoint Online（導入は WinPS 5.1 側で行う）
+
+> **Windows PowerShell 5.1（管理者）**で実行してください。
+
+```powershell
+$PSVersionTable.PSVersion
+```
+
+```powershell
+Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+```
+
+```powershell
+Install-Module Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope AllUsers -Force
+```
+
+---
+
+## A-6. モジュールの保守（任意）
+
+### 導入済みバージョンの確認
+
+```powershell
+Get-InstalledModule Microsoft.Graph,ExchangeOnlineManagement,MicrosoftTeams -ErrorAction SilentlyContinue | Select-Object Name,Version,InstalledLocation
+```
+
+```powershell
+Get-Module -ListAvailable Microsoft.Online.SharePoint.PowerShell | Sort-Object Version -Descending | Select-Object -First 1 Name,Version,Path
+```
+
+### 更新（必要時のみ実行）
+
+```powershell
+Update-Module Microsoft.Graph -Scope AllUsers -Force
+```
+
+```powershell
+Update-Module ExchangeOnlineManagement -Scope AllUsers -Force
+```
+
+```powershell
+Update-Module MicrosoftTeams -Scope AllUsers -Force
+```
+
+```powershell
+Update-Module Microsoft.Online.SharePoint.PowerShell -Scope AllUsers -Force
+```
+
+---
+
+# B：接続テスト（使い回し前提・インタラクティブ認証）
+
+> 要件:
+>
+> * 01 以降で **そのまま流用**できる
+> * トラブルが少なく **シンプル**
+> * 基本は **インタラクティブ認証**（ブラウザ認証）
+> * モジュールのインストール／更新は **含めない**（A で実施）
+
+## Phase 0: Tenant Variables（EDIT HERE ONLY）
+
+```powershell
+$TenantCustomDomain = "example.com"                       # 独自ドメイン
+```
+
+```powershell
+$TenantOnMicrosoft  = "example-legacy123.onmicrosoft.com" # テナント作成時に指定したサブドメインを含めたフォールバックドメイン
+```
+
+```powershell
+$AdminUpn           = "admin@$TenantCustomDomain"         # 管理者UPN
+```
+
+```powershell
+# SharePoint Online
+$SPOTenantPrefix    = "example-legacy123"                 # https://<prefix>.sharepoint.com の <prefix>
+```
+
+```powershell
+$SPOAdminUrl        = "https://$SPOTenantPrefix-admin.sharepoint.com" # URLはテナントの実値に合わせて修正する
+```
+
+```powershell
+$SPORootUrl         = "https://$SPOTenantPrefix.sharepoint.com"
+```
+
+```powershell
+# 緊急アクセス用アカウント
+$BreakGlassUpn1     = "breakglass1@$TenantOnMicrosoft"
+```
+
+```powershell
+$BreakGlassUpn2     = "breakglass2@$TenantOnMicrosoft"
+```
+
+---
+
+## Phase 1: 前提確認（目視）
+
+```powershell
+$PSVersionTable.PSVersion
+```
+
+```powershell
+whoami
+```
+
+---
+
+## Phase 2: 接続テスト（設定変更なし）
+
+### 2.1 Microsoft Graph（Read-only）
+
+```powershell
+Import-Module Microsoft.Graph
+Disconnect-MgGraph -ErrorAction SilentlyContinue
+Connect-MgGraph -Scopes "Organization.Read.All"
+$tid_graph = (Get-MgOrganization).Id
+$tid_graph
+```
+
+### 2.2 Exchange Online（WAM 回避を既定）
+
+> 環境により WAM（Web Account Manager）関連例外が出るため、`-DisableWAM` を既定とします。
+
+```powershell
+Import-Module ExchangeOnlineManagement
+Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue
+Connect-ExchangeOnline -UserPrincipalName $AdminUpn -DisableWAM -ShowBanner:$false
+Get-OrganizationConfig | Select-Object Name
+```
+
+### 2.3 Microsoft Teams
+
+```powershell
+Import-Module MicrosoftTeams
+Disconnect-MicrosoftTeams -ErrorAction SilentlyContinue
 Connect-MicrosoftTeams
-
-# SharePoint Onlineに接続（ご自身のドメインに書き換えてください）
-Connect-PnPOnline -Url "https://yourdomain-admin.sharepoint.com" -Interactive
+$tid_teams = (Get-CsTenant).TenantId
+$tid_teams
 ```
 
-### ② 証明書認証（無人実行 / 自動化）
+### 2.4 SharePoint Online（PS7 → WinPSCompatSession）
 
-**用途：** 定期的なバックアップ、ユーザーの一括作成、自動設定。
-**ゼロトラストにおける推奨:** ID/パスワードを使わず、秘密鍵を持つサーバーのみに実行権限を与える方式です。
-
-- **準備：** Entra ID（旧Azure AD）に「アプリの登録」を行い、証明書をアップロードします。
-    - ステップ1：自分のPCで証明書を作成する。
-        
-        ```powershell
-        # 自己署名証明書の作成（有効期限2年）
-        $cert = New-SelfSignedCertificate -DnsName "M365AdminAutomation" -CertStoreLocation "Cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(2)
-        
-        # M365登録用に、公開鍵（.cerファイル）を書き出す
-        Export-Certificate -Cert $cert -FilePath "C:\temp\M365Admin.cer"
-        ```
-        
-    - ステップ2：M365（Entra ID）にアップロードする。
-        1. [Entra 管理センター](https://www.google.com/url?sa=E&source=gmail&q=https://entra.microsoft.com/) ＞ アプリの登録 ＞ 自分のアプリを選択。
-        2. **「証明書とシークレット」** ＞ **「証明書のアップロード」** で、先ほど書き出した `.cer` ファイルを選択します。
-- **メリット：** MFAをスキップして安全に自動実行が可能。
+> 目的: **意図した SPO テナントに接続できているか**を、SPO 側の情報だけで確認する。
 
 ```powershell
-# 事前定義（一例）
-$TenantId = "your-tenant-id"
-$AppId = "your-app-id"
-$Thumbprint = "your-certificate-thumbprint"
-$Domain = "yourdomain.onmicrosoft.com"
-
-# --- 接続コマンド ---
-Connect-MgGraph -TenantId $TenantId -AppId $AppId -CertificateThumbprint $Thumbprint
-Connect-ExchangeOnline -CertificateThumbprint $Thumbprint -AppId $AppId -Organization $Domain
-Connect-MicrosoftTeams -CertificateThumbprint $Thumbprint -ApplicationId $AppId -TenantId $TenantId
-Connect-PnPOnline -Url "https://$($Domain.Split('.')[0])-admin.sharepoint.com" -ClientId $AppId -Thumbprint $Thumbprint -Tenant $TenantId
+Import-Module Microsoft.Online.SharePoint.PowerShell -UseWindowsPowerShell
+Disconnect-SPOService -ErrorAction SilentlyContinue
+Connect-SPOService -Url $SPOAdminUrl -UseSystemBrowser $true
+Get-SPOSite -Limit 1 | Select-Object Url
 ```
 
-### ③ マネージドID（Azure VM/Automation上での実行）
+合格条件（目視）:
 
-**用途：** Azure上でスクリプトを動かす場合。
-認証情報をコードや証明書として管理する必要すらなく、Azureのリソース自体に権限を付与します。
+* `Url` が `https://$SPOTenantPrefix.sharepoint.com/...` の形式で返る
+* 返った `Url` のホスト名が `$SPORootUrl` と一致する
+
+---
+
+## 参考: TenantId の整合（Graph / Teams）
+
+> 目的: **意図しない別テナントへの接続**を検知する（SPO/EXO ではなく、SoT として Graph/Teams を利用）。
 
 ```powershell
-# 1. 変数の準備（ご自身のドメインに書き換えて実行してください）
-$Domain = "yourdomain.onmicrosoft.com"
-
-# 2. Microsoft Graph に接続
-Connect-MgGraph -Identity
-
-# 3. Exchange Online に接続
-Connect-ExchangeOnline -ManagedIdentity -Organization $Domain
-
-# 4. Microsoft Teams に接続
-# ※マネージドIDの「クライアントID」を $ManagedIdentityId に指定します
-$ManagedIdentityId = "00000000-0000-0000-0000-000000000000"
-Connect-MicrosoftTeams -Identity -AccountId $ManagedIdentityId
-
-# 5. SharePoint Online / PnP に接続
-# ※URLをご自身の環境に合わせて書き換えてください
-$AdminUrl = "https://yourdomain-admin.sharepoint.com"
-Connect-PnPOnline -Url $AdminUrl -ManagedIdentity
+"$tid_graph / $tid_teams"
 ```
+
+合格条件（目視）:
+
+* TenantId が一致する
