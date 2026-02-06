@@ -87,9 +87,6 @@ Install-Module Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Sco
 
 ```powershell
 Get-InstalledModule Microsoft.Graph,ExchangeOnlineManagement,MicrosoftTeams -ErrorAction SilentlyContinue | Select-Object Name,Version,InstalledLocation
-```
-
-```powershell
 Get-Module -ListAvailable Microsoft.Online.SharePoint.PowerShell | Sort-Object Version -Descending | Select-Object -First 1 Name,Version,Path
 ```
 
@@ -143,9 +140,6 @@ $BreakGlassUpn2     = "breakglass2@$TenantOnMicrosoft"
 
 ```powershell
 $PSVersionTable.PSVersion
-```
-
-```powershell
 whoami
 ```
 
