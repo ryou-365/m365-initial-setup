@@ -126,35 +126,14 @@ Update-Module Microsoft.Online.SharePoint.PowerShell -Scope AllUsers -Force
 
 ```powershell
 $TenantCustomDomain = "example.com"                       # 独自ドメイン
-```
-
-```powershell
 $TenantOnMicrosoft  = "example-legacy123.onmicrosoft.com" # テナント作成時に指定したサブドメインを含めたフォールバックドメイン
-```
-
-```powershell
 $AdminUpn           = "admin@$TenantCustomDomain"         # 管理者UPN
-```
-
-```powershell
 # SharePoint Online
 $SPOTenantPrefix    = "example-legacy123"                 # https://<prefix>.sharepoint.com の <prefix>
-```
-
-```powershell
 $SPOAdminUrl        = "https://$SPOTenantPrefix-admin.sharepoint.com" # URLはテナントの実値に合わせて修正する
-```
-
-```powershell
 $SPORootUrl         = "https://$SPOTenantPrefix.sharepoint.com"
-```
-
-```powershell
 # 緊急アクセス用アカウント
 $BreakGlassUpn1     = "breakglass1@$TenantOnMicrosoft"
-```
-
-```powershell
 $BreakGlassUpn2     = "breakglass2@$TenantOnMicrosoft"
 ```
 
