@@ -126,21 +126,27 @@ Update-Module Microsoft.Online.SharePoint.PowerShell -Scope AllUsers -Force
 ```powershell
 # カスタムドメイン
 $TenantCustomDomain   = "example.com"
-# onmicrosoft.comのサブドメイン
-$TenantOnMicrosoft    = "example-Fallback"
+
+# onmicrosoft.com のサブドメイン
+$TenantOnMicrosoft    = "example-fallback"
 
 # 管理者アカウント名
 $AdminUser            = "admin"
 
-# 緊急アクセス用アカウント名
+# 緊急アクセス用アカウント名（技術識別子）
 $BreakGlassUser1      = "breakglass1"
 $BreakGlassUser2      = "breakglass2"
 
-# 自動定義 (編集禁止)
+# 緊急アクセス用表示名（役割明示）
+$BreakGlassDisplayName1 = "BreakGlass Account 1"
+$BreakGlassDisplayName2 = "BreakGlass Account 2"
+
+# --- 自動定義（編集禁止） ---
 $TenantFallbackDomain = "$TenantOnMicrosoft.onmicrosoft.com"
 $AdminUpn             = "$AdminUser@$TenantCustomDomain"
 $SPOAdminUrl          = "https://$TenantOnMicrosoft-admin.sharepoint.com"
 $SPORootUrl           = "https://$TenantOnMicrosoft.sharepoint.com"
+
 $BreakGlassUpn1       = "$BreakGlassUser1@$TenantFallbackDomain"
 $BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"
 ```
