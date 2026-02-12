@@ -30,12 +30,32 @@ CA 本体・MFA 強制は README に定義された通り、後続の `04_Condit
 # Phase 0: Tenant Variables（EDIT HERE ONLY）
 
 ```powershell
-$TenantCustomDomain = "example.com"                       # 独自ドメイン
-$TenantOnMicrosoft  = "example-legacy123.onmicrosoft.com" # フォールバックドメイン
-$AdminUpn           = "admin@$TenantCustomDomain"         # 管理者UPN
-# break-glass（2アカウント固定）
-$BreakGlassUpn1     = "breakglass1@$TenantOnMicrosoft"
-$BreakGlassUpn2     = "breakglass2@$TenantOnMicrosoft"
+# カスタムドメイン
+$TenantCustomDomain   = "example.com"
+
+# onmicrosoft.com のサブドメイン
+$TenantOnMicrosoft    = "example-fallback"
+
+# 管理者アカウント名
+$AdminUser            = "admin"
+
+# 緊急アクセス用アカウント名（技術識別子）
+$BreakGlassUser1      = "breakglass1"
+$BreakGlassUser2      = "breakglass2"
+
+# 緊急アクセス用表示名（役割明示）
+$BreakGlassDisplayName1 = "BreakGlass Account 1"
+$BreakGlassDisplayName2 = "BreakGlass Account 2"
+
+# --- 自動定義（編集禁止） ---
+$TenantFallbackDomain = "$TenantOnMicrosoft.onmicrosoft.com"
+$AdminUpn             = "$AdminUser@$TenantCustomDomain"
+$SPOAdminUrl          = "https://$TenantOnMicrosoft-admin.sharepoint.com"
+$SPORootUrl           = "https://$TenantOnMicrosoft.sharepoint.com"
+
+$BreakGlassUpn1       = "$BreakGlassUser1@$TenantFallbackDomain"
+$BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"接続時の挙動について
+
 # break-glass 除外用グループ
 $BreakGlassExemptGroupName = "sg-entra-breakglass-exempt"
 ```
@@ -47,24 +67,23 @@ $BreakGlassExemptGroupName = "sg-entra-breakglass-exempt"
 > 本章では **ユーザー / グループ / ロール操作のみ**を行います。
 
 ```powershell
+# 接続コマンド: アカウント作成、グローバル管理者権限の付与を行うためのスコープを指定して接続
 Import-Module Microsoft.Graph
-```
+Connect-MgGraph -Scopes "User.ReadWrite.All","Directory.ReadWrite.All","RoleManagement.ReadWrite.Directory" -NoWelcome
+(Get-MgContext | Select-Object TenantId, Account)
 
-```powershell
-Disconnect-MgGraph -ErrorAction SilentlyContinue
-```
+# Global Administrator ロール取得
+$gaRole = Get-MgDirectoryRole | Where-Object DisplayName -eq "Global Administrator"
 
-```powershell
-Connect-MgGraph -Scopes @(
-  "Organization.Read.All",
-  "User.ReadWrite.All",
-  "Group.ReadWrite.All",
-  "RoleManagement.ReadWrite.Directory"
-)
-```
-
-```powershell
-Get-MgContext | Select-Object Account,TenantId,Scopes
+## イレギュラー対応用
+### グローバル管理者のテンプレートID (固定値)
+#$gaTemplateId = "62e90394-69f5-4237-9190-012177145e10"
+### 役割がまだ有効化されていない場合に有効化
+#$gaRole = Get-MgDirectoryRole | Where-Object DisplayName -eq "Global Administrator"
+#if (-not $gaRole) {
+#  Enable-MgDirectoryRole -RoleTemplateId $gaTemplateId
+#  $gaRole = Get-MgDirectoryRole | Where-Object DisplayName -eq "Global Administrator"
+#}
 ```
 
 ---
@@ -97,28 +116,35 @@ Get-MgUser -UserId $BreakGlassUpn2 -ErrorAction SilentlyContinue | Select Displa
 > パスワードは **別経路で生成・保管**してください。
 
 ```powershell
-$pwd1 = "<GENERATE-STRONG-PASSWORD-1>"
-$pwd2 = "<GENERATE-STRONG-PASSWORD-2>"
+# パスワードは Keeperなど からコピペ
+$sec1 = Read-Host "Password for $BreakGlassUpn1 : " -AsSecureString
+$pw1  = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
+          [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec1)
+        )
+
+# 作成
+New-MgUser `
+  -DisplayName $BreakGlassDisplayName1 `
+  -UserPrincipalName $BreakGlassUpn1 `
+  -MailNickname $BreakGlassUser1 `
+  -AccountEnabled $true `
+  -PasswordProfile @{ Password = $pw1; ForceChangePasswordNextSignIn = $false }
 ```
 
 ```powershell
-if (-not (Get-MgUser -UserId $BreakGlassUpn1 -ErrorAction SilentlyContinue)) {
-  New-MgUser -AccountEnabled:$true `
-    -DisplayName "BreakGlass 1" `
-    -MailNickname "breakglass1" `
-    -UserPrincipalName $BreakGlassUpn1 `
-    -PasswordProfile @{ ForceChangePasswordNextSignIn = $false; Password = $pwd1 }
-}
-```
+# パスワードは Keeperなど からコピペ
+$sec2 = Read-Host "Password for $BreakGlassUpn2 : " -AsSecureString
+$pw2  = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
+          [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec2)
+        )
 
-```powershell
-if (-not (Get-MgUser -UserId $BreakGlassUpn2 -ErrorAction SilentlyContinue)) {
-  New-MgUser -AccountEnabled:$true `
-    -DisplayName "BreakGlass 2" `
-    -MailNickname "breakglass2" `
-    -UserPrincipalName $BreakGlassUpn2 `
-    -PasswordProfile @{ ForceChangePasswordNextSignIn = $false; Password = $pwd2 }
-}
+# 作成
+New-MgUser `
+  -DisplayName $BreakGlassDisplayName2 `
+  -UserPrincipalName $BreakGlassUpn2 `
+  -MailNickname $BreakGlassUser2 `
+  -AccountEnabled $true `
+  -PasswordProfile @{ Password = $pw2; ForceChangePasswordNextSignIn = $false }
 ```
 
 ---
@@ -126,28 +152,15 @@ if (-not (Get-MgUser -UserId $BreakGlassUpn2 -ErrorAction SilentlyContinue)) {
 # Phase 4: Global Administrator ロール付与
 
 ```powershell
-$ga = Get-MgDirectoryRole | Where-Object DisplayName -eq "Global Administrator"
+# GA 付与
+$bgu1 = Get-MgUser -UserId $BreakGlassUpn1
+New-MgDirectoryRoleMember -DirectoryRoleId $gaRole.Id -DirectoryObjectId $bgu1.Id
 ```
 
 ```powershell
-if (-not $ga) {
-  $tmpl = Get-MgDirectoryRoleTemplate | Where-Object DisplayName -eq "Global Administrator"
-  New-MgDirectoryRole -RoleTemplateId $tmpl.Id | Out-Null
-  $ga = Get-MgDirectoryRole | Where-Object DisplayName -eq "Global Administrator"
-}
-```
-
-```powershell
-$bg1 = Get-MgUser -UserId $BreakGlassUpn1
-$bg2 = Get-MgUser -UserId $BreakGlassUpn2
-```
-
-```powershell
-New-MgDirectoryRoleMember -DirectoryRoleId $ga.Id -DirectoryObjectId $bg1.Id
-```
-
-```powershell
-New-MgDirectoryRoleMember -DirectoryRoleId $ga.Id -DirectoryObjectId $bg2.Id
+# GA 付与
+$bgu2 = Get-MgUser -UserId $BreakGlassUpn2
+New-MgDirectoryRoleMember -DirectoryRoleId $gaRole.Id -DirectoryObjectId $bgu2.Id
 ```
 
 ---
