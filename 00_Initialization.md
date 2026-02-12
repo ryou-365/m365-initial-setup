@@ -158,7 +158,7 @@ whoami
 
 ## Phase 2: 接続テスト（設定変更なし）
 
-### 2.1 Microsoft Graph（Read-only）
+### 2.1 Microsoft Graph
 
 ```powershell
 Import-Module Microsoft.Graph
@@ -166,7 +166,7 @@ Connect-MgGraph -Scopes "User.Read" -NoWelcome
 (Get-MgContext | Select-Object TenantId, Account)
 ```
 
-### 2.2 Exchange Online（WAM 回避を既定）
+### 2.2 Exchange Online
 
 ```powershell
 Import-Module ExchangeOnlineManagement
