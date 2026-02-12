@@ -124,16 +124,25 @@ Update-Module Microsoft.Online.SharePoint.PowerShell -Scope AllUsers -Force
 ## Phase 0: Tenant Variables（EDIT HERE ONLY）
 
 ```powershell
-$TenantCustomDomain = "example.com"                       # 独自ドメイン
-$TenantOnMicrosoft  = "example-legacy123.onmicrosoft.com" # テナント作成時に指定したサブドメインを含めたフォールバックドメイン
-$AdminUpn           = "admin@$TenantCustomDomain"         # 管理者UPN
-# SharePoint Online
-$SPOTenantPrefix    = "example-legacy123"                 # https://<prefix>.sharepoint.com の <prefix>
-$SPOAdminUrl        = "https://$SPOTenantPrefix-admin.sharepoint.com" # URLはテナントの実値に合わせて修正する
-$SPORootUrl         = "https://$SPOTenantPrefix.sharepoint.com"
-# 緊急アクセス用アカウント
-$BreakGlassUpn1     = "breakglass1@$TenantOnMicrosoft"
-$BreakGlassUpn2     = "breakglass2@$TenantOnMicrosoft"
+# カスタムドメイン
+$TenantCustomDomain   = "example.com"
+# onmicrosoft.comのサブドメイン
+$TenantOnMicrosoft    = "example-Fallback"
+
+# 管理者アカウント名
+$AdminUser            = "admin"
+
+# 緊急アクセス用アカウント名
+$BreakGlassUser1      = "breakglass1"
+$BreakGlassUser2      = "breakglass2"
+
+# 自動定義 (編集禁止)
+$TenantFallbackDomain = "$TenantOnMicrosoft.onmicrosoft.com"
+$AdminUpn             = "$AdminUser@$TenantCustomDomain"
+$SPOAdminUrl          = "https://$TenantOnMicrosoft-admin.sharepoint.com"
+$SPORootUrl           = "https://$TenantOnMicrosoft.sharepoint.com"
+$BreakGlassUpn1       = "$BreakGlassUser1@$TenantFallbackDomain"
+$BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"
 ```
 
 ---
@@ -153,59 +162,33 @@ whoami
 
 ```powershell
 Import-Module Microsoft.Graph
-Disconnect-MgGraph -ErrorAction SilentlyContinue
-Connect-MgGraph -Scopes "Organization.Read.All"
-$tid_graph = (Get-MgOrganization).Id
-$tid_graph
+Connect-MgGraph -Scopes "User.Read" -NoWelcome
+(Get-MgContext | Select-Object TenantId, Account)
 ```
 
 ### 2.2 Exchange Online（WAM 回避を既定）
 
-> 環境により WAM（Web Account Manager）関連例外が出るため、`-DisableWAM` を既定とします。
-
 ```powershell
 Import-Module ExchangeOnlineManagement
-Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue
-Connect-ExchangeOnline -UserPrincipalName $AdminUpn -DisableWAM -ShowBanner:$false
-Get-OrganizationConfig | Select-Object Name
+Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false
+(Get-ConnectionInformation | Select-Object -First 1).TenantId
 ```
 
 ### 2.3 Microsoft Teams
 
 ```powershell
 Import-Module MicrosoftTeams
-Disconnect-MicrosoftTeams -ErrorAction SilentlyContinue
-Connect-MicrosoftTeams
-$tid_teams = (Get-CsTenant).TenantId
-$tid_teams
+Connect-MicrosoftTeams -AccountId $AdminUpn
+(Get-CsTenant).Identity
 ```
 
 ### 2.4 SharePoint Online（PS7 → WinPSCompatSession）
 
-> 目的: **意図した SPO テナントに接続できているか**を、SPO 側の情報だけで確認する。
-
 ```powershell
 Import-Module Microsoft.Online.SharePoint.PowerShell -UseWindowsPowerShell
-Disconnect-SPOService -ErrorAction SilentlyContinue
-Connect-SPOService -Url $SPOAdminUrl -UseSystemBrowser $true
-Get-SPOSite -Limit 1 | Select-Object Url
+Connect-SPOService -Url $SPOAdminUrl -UseSystemBrowser:$true
+
+# 意図したテナントのサイトをSPO側から取得できるかで確認（SPO側の事実）
+(Get-SPOSite -Identity $SPORootUrl -ErrorAction Stop) | Select-Object Url, Title
 ```
 
-合格条件（目視）:
-
-* `Url` が `https://$SPOTenantPrefix.sharepoint.com/...` の形式で返る
-* 返った `Url` のホスト名が `$SPORootUrl` と一致する
-
----
-
-## 参考: TenantId の整合（Graph / Teams）
-
-> 目的: **意図しない別テナントへの接続**を検知する（SPO/EXO ではなく、SoT として Graph/Teams を利用）。
-
-```powershell
-"$tid_graph / $tid_teams"
-```
-
-合格条件（目視）:
-
-* TenantId が一致する
