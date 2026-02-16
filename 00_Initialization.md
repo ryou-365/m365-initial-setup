@@ -158,7 +158,8 @@ $BreakGlassUpn1       = "$BreakGlassUser1@$TenantFallbackDomain"
 $BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"
 
 # break-glass 除外用グループ
-$BreakGlassExemptGroupName = "sg-entra-breakglass-exempt"
+$BreakGlassExemptGroupName = "BreakGlass Exempt (CA Exclusion)"
+$BreakGlassExemptGroupMailNick = "sg-entra-breakglass-exempt"
 ```
 
 ---
