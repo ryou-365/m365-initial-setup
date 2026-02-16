@@ -54,7 +54,7 @@ $SPOAdminUrl          = "https://$TenantOnMicrosoft-admin.sharepoint.com"
 $SPORootUrl           = "https://$TenantOnMicrosoft.sharepoint.com"
 
 $BreakGlassUpn1       = "$BreakGlassUser1@$TenantFallbackDomain"
-$BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"接続時の挙動について
+$BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"
 
 # break-glass 除外用グループ
 $BreakGlassExemptGroupName = "sg-entra-breakglass-exempt"
