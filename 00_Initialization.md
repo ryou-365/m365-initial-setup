@@ -179,6 +179,10 @@ Connect-MgGraph -Scopes "User.Read" -NoWelcome
 ```powershell
 Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false
 (Get-ConnectionInformation | Select-Object -First 1).TenantId
+
+## うまくいかないとき
+Connect-ExchangeOnline -UserPrincipalName $AdminUpn -Device -ShowBanner:$false
+(Get-ConnectionInformation | Select-Object -First 1).TenantId
 ```
 
 ### 2.3 Microsoft Teams
