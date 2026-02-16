@@ -120,7 +120,7 @@ Get-MgUser -UserId $BreakGlassUpn2 -ErrorAction SilentlyContinue | Select Displa
 
 ```powershell
 # パスワードは Keeperなど からコピペ
-$sec1 = Read-Host "Password for $BreakGlassUpn1 : " -AsSecureString
+$sec1 = Read-Host "Password for $BreakGlassUpn1 " -AsSecureString
 $pw1  = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
           [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec1)
         )
@@ -140,7 +140,7 @@ New-MgUser -BodyParameter @{
 
 ```powershell
 # パスワードは Keeperなど からコピペ
-$sec2 = Read-Host "Password for $BreakGlassUpn2 : " -AsSecureString
+$sec2 = Read-Host "Password for $BreakGlassUpn2 " -AsSecureString
 $pw2  = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
           [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec2)
         )
