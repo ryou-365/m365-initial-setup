@@ -121,6 +121,13 @@ Update-Module Microsoft.Online.SharePoint.PowerShell -Scope AllUsers -Force
 > * 基本は **インタラクティブ認証**（ブラウザ認証）
 > * モジュールのインストール／更新は **含めない**（A で実施）
 
+> 注意:
+>
+> * Graph/Exchange Online/Teams/SharePoint Onlineへの接続は、それぞれ別でPowerShellを起動して実施してください。
+> * 原則は、常に1つだけで作業し、同時作業は並行しないようにしてください。
+> * 接続の際に利用するMSALが混在すると認証時に高い確率でトラブルが発生します。
+
+
 ## Phase 0: Tenant Variables（EDIT HERE ONLY）
 
 ```powershell
