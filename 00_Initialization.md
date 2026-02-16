@@ -205,8 +205,7 @@ Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue
 Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false -ErrorAction SilentlyContinue
 
 # テナント確認
-$exoTenantId = (Get-ConnectionInformation | Select-Object -First 1).TenantId
-$exoTenantId
+Get-OrganizationConfig | Select-Object DisplayName
 
 # 別アカウントに寄った場合は Device Code
 if (-not $exoTenantId) {
@@ -226,12 +225,15 @@ Disconnect-MicrosoftTeams -ErrorAction SilentlyContinue
 Connect-MicrosoftTeams -AccountId $AdminUpn
 
 # テナント確認
-(Get-CsTenant).Identity
+Get-CsTenant | Select-Object DisplayName
 ```
 
 ### 2.4 SharePoint Online（PS7 → WinPSCompatSession）
 
 ```powershell
+# --- Import (必須：PS7では自動ロードされないことがある) ---
+Import-Module Microsoft.Online.SharePoint.PowerShell -Force
+
 # --- Disconnect ---
 Disconnect-SPOService -ErrorAction SilentlyContinue
 
