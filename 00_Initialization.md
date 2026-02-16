@@ -170,7 +170,6 @@ whoami
 ### 2.1 Microsoft Graph
 
 ```powershell
-Import-Module Microsoft.Graph
 Connect-MgGraph -Scopes "User.Read" -NoWelcome
 (Get-MgContext | Select-Object TenantId, Account)
 ```
@@ -178,7 +177,6 @@ Connect-MgGraph -Scopes "User.Read" -NoWelcome
 ### 2.2 Exchange Online
 
 ```powershell
-Import-Module ExchangeOnlineManagement
 Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false
 (Get-ConnectionInformation | Select-Object -First 1).TenantId
 ```
@@ -186,7 +184,6 @@ Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false
 ### 2.3 Microsoft Teams
 
 ```powershell
-Import-Module MicrosoftTeams
 Connect-MicrosoftTeams -AccountId $AdminUpn
 (Get-CsTenant).Identity
 ```
@@ -194,7 +191,6 @@ Connect-MicrosoftTeams -AccountId $AdminUpn
 ### 2.4 SharePoint Online（PS7 → WinPSCompatSession）
 
 ```powershell
-Import-Module Microsoft.Online.SharePoint.PowerShell -UseWindowsPowerShell
 Connect-SPOService -Url $SPOAdminUrl -UseSystemBrowser:$true
 
 # 意図したテナントのサイトをSPO側から取得できるかで確認（SPO側の事実）
