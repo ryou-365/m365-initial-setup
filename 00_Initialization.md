@@ -178,34 +178,65 @@ whoami
 ### 2.1 Microsoft Graph
 
 ```powershell
-Connect-MgGraph -Scopes "User.Read" -NoWelcome
-(Get-MgContext | Select-Object TenantId, Account)
+# --- Disconnect ---
+Disconnect-MgGraph -ErrorAction SilentlyContinue
+
+# --- Connect ---
+Connect-MgGraph `
+  -TenantId $TenantFallbackDomain `
+  -Scopes "RoleManagement.ReadWrite.Directory","Policy.ReadWrite.ConditionalAccess" `
+  -UseDeviceCode `
+  -ContextScope Process
+
+# 接続確認
+(Get-MgContext).Account
+(Get-MgContext).TenantId
 ```
 
 ### 2.2 Exchange Online
 
 ```powershell
-Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false
-(Get-ConnectionInformation | Select-Object -First 1).TenantId
+# --- Disconnect ---
+Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue
 
-## うまくいかないとき
-Connect-ExchangeOnline -UserPrincipalName $AdminUpn -Device -ShowBanner:$false
-(Get-ConnectionInformation | Select-Object -First 1).TenantId
+# --- Connect（通常） ---
+Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false -ErrorAction SilentlyContinue
+
+# テナント確認
+$exoTenantId = (Get-ConnectionInformation | Select-Object -First 1).TenantId
+$exoTenantId
+
+# 別アカウントに寄った場合は Device Code
+if (-not $exoTenantId) {
+  Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue
+  Connect-ExchangeOnline -UserPrincipalName $AdminUpn -Device -ShowBanner:$false
+  (Get-ConnectionInformation | Select-Object -First 1).TenantId
+}
 ```
 
 ### 2.3 Microsoft Teams
 
 ```powershell
+# --- Disconnect ---
+Disconnect-MicrosoftTeams -ErrorAction SilentlyContinue
+
+# --- Connect ---
 Connect-MicrosoftTeams -AccountId $AdminUpn
+
+# テナント確認
 (Get-CsTenant).Identity
 ```
 
 ### 2.4 SharePoint Online（PS7 → WinPSCompatSession）
 
 ```powershell
+# --- Disconnect ---
+Disconnect-SPOService -ErrorAction SilentlyContinue
+
+# --- Connect ---
 Connect-SPOService -Url $SPOAdminUrl -UseSystemBrowser:$true
 
-# 意図したテナントのサイトをSPO側から取得できるかで確認（SPO側の事実）
+# テナント確認（SPO側の事実）
 (Get-SPOSite -Identity $SPORootUrl -ErrorAction Stop) | Select-Object Url, Title
 ```
 
