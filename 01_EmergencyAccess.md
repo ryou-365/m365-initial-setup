@@ -163,15 +163,41 @@ New-MgUser -BodyParameter @{
 # Phase 4: Global Administrator ロール付与
 
 ```powershell
-# GA 付与
+# GA付与
+
 $bgu1 = Get-MgUser -UserId $BreakGlassUpn1
-New-MgDirectoryRoleMember -DirectoryRoleId $gaRole.Id -DirectoryObjectId $bgu1.Id
+
+$filter = "roleDefinitionId eq '$($gaRole.RoleTemplateId)' and principalId eq '$($bgu1.Id)' and directoryScopeId eq '/'"
+$exists = Get-MgRoleManagementDirectoryRoleAssignment -Filter $filter
+
+if (-not $exists) {
+  New-MgRoleManagementDirectoryRoleAssignment -BodyParameter @{
+    roleDefinitionId = $gaRole.RoleTemplateId
+    principalId      = $bgu1.Id
+    directoryScopeId = "/"
+  }
+} else {
+  Write-Host "Already assigned: Global Administrator -> $($bgu1.UserPrincipalName)"
+}
 ```
 
 ```powershell
-# GA 付与
+# GA付与
+
 $bgu2 = Get-MgUser -UserId $BreakGlassUpn2
-New-MgDirectoryRoleMember -DirectoryRoleId $gaRole.Id -DirectoryObjectId $bgu2.Id
+
+$filter = "roleDefinitionId eq '$($gaRole.RoleTemplateId)' and principalId eq '$($bgu2.Id)' and directoryScopeId eq '/'"
+$exists = Get-MgRoleManagementDirectoryRoleAssignment -Filter $filter
+
+if (-not $exists) {
+  New-MgRoleManagementDirectoryRoleAssignment -BodyParameter @{
+    roleDefinitionId = $gaRole.RoleTemplateId
+    principalId      = $bgu2.Id
+    directoryScopeId = "/"
+  }
+} else {
+  Write-Host "Already assigned: Global Administrator -> $($bgu2.UserPrincipalName)"
+}
 ```
 
 ---
