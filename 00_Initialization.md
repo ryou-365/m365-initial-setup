@@ -177,7 +177,7 @@ Connect-MgGraph -Scopes "User.Read" -NoWelcome
 ### 2.2 Exchange Online
 
 ```powershell
-Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false
+Connect-ExchangeOnline -UserPrincipalName $AdminUpn -ShowBanner:$false -Device
 (Get-ConnectionInformation | Select-Object -First 1).TenantId
 ```
 
