@@ -130,6 +130,8 @@ Update-Module Microsoft.Online.SharePoint.PowerShell -Scope AllUsers -Force
 
 ## Phase 0: Tenant Variables（EDIT HERE ONLY）
 
+- 下記をコピーして手元で自身の環境に応じた設定を記述し、接続前にPowerShellで実行してください。
+
 ```powershell
 # カスタムドメイン
 $TenantCustomDomain   = "example.com"
