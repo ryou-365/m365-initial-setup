@@ -70,10 +70,14 @@ $BreakGlassExemptGroupName = "sg-entra-breakglass-exempt"
 # 接続コマンド: アカウント作成、グローバル管理者権限の付与を行うためのスコープを指定して接続
 Connect-MgGraph -Scopes "User.ReadWrite.All","Directory.ReadWrite.All","RoleManagement.ReadWrite.Directory" -NoWelcome
 (Get-MgContext | Select-Object TenantId, Account)
+```
 
+```powershell
 # Global Administrator ロール取得
 $gaRole = Get-MgDirectoryRole | Where-Object DisplayName -eq "Global Administrator"
+```
 
+```powershell
 ## イレギュラー対応用
 ### グローバル管理者のテンプレートID (固定値)
 #$gaTemplateId = "62e90394-69f5-4237-9190-012177145e10"
