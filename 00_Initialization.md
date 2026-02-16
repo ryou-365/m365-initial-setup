@@ -149,6 +149,9 @@ $SPORootUrl           = "https://$TenantOnMicrosoft.sharepoint.com"
 
 $BreakGlassUpn1       = "$BreakGlassUser1@$TenantFallbackDomain"
 $BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"
+
+# break-glass 除外用グループ
+$BreakGlassExemptGroupName = "sg-entra-breakglass-exempt"
 ```
 
 ---
