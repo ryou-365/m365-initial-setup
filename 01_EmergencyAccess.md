@@ -213,18 +213,42 @@ if (-not $exists) {
 ## 5.2 作成
 
 ```powershell
-$rule = "(user.userPrincipalName -eq \"$BreakGlassUpn1\") -or (user.userPrincipalName -eq \"$BreakGlassUpn2\")"
+# Dynamic group membership rule
+$rule = "(user.userPrincipalName -eq `"$BreakGlassUpn1`") -or (user.userPrincipalName -eq `"$BreakGlassUpn2`")"
 ```
 
 ```powershell
-if (-not (Get-MgGroup -Filter "displayName eq '$BreakGlassExemptGroupName'")) {
-  New-MgGroup -DisplayName $BreakGlassExemptGroupName `
+# 既存グループ確認
+$existing = Get-MgGroup -Filter "displayName eq '$BreakGlassExemptGroupName'" -ConsistencyLevel eventual
+
+if (-not $existing) {
+
+  New-MgGroup `
+    -DisplayName $BreakGlassExemptGroupName `
     -MailEnabled:$false `
-    -MailNickname "sg-entra-breakglass-exempt" `
+    -MailNickname $BreakGlassExemptGroupMailNick `
     -SecurityEnabled:$true `
     -GroupTypes @("DynamicMembership") `
     -MembershipRule $rule `
-    -MembershipRuleProcessingState "On"
+    -MembershipRuleProcessingState "On" | Out-Null
+
+  Write-Host "Created: $BreakGlassExemptGroupName"
+
+} else {
+
+  # ルール差分チェック（冪等）
+  if ($existing.MembershipRule -ne $rule) {
+
+    Update-MgGroup `
+      -GroupId $existing.Id `
+      -MembershipRule $rule `
+      -MembershipRuleProcessingState "On"
+
+    Write-Host "Updated membership rule: $BreakGlassExemptGroupName"
+
+  } else {
+    Write-Host "No change: $BreakGlassExemptGroupName"
+  }
 }
 ```
 
