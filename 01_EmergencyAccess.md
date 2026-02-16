@@ -126,12 +126,16 @@ $pw1  = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
         )
 
 # 作成
-New-MgUser `
-  -DisplayName $BreakGlassDisplayName1 `
-  -UserPrincipalName $BreakGlassUpn1 `
-  -MailNickname $BreakGlassUser1 `
-  -AccountEnabled $true `
-  -PasswordProfile @{ Password = $pw1; ForceChangePasswordNextSignIn = $false }
+New-MgUser -BodyParameter @{
+    displayName = $BreakGlassDisplayName1
+    userPrincipalName = $BreakGlassUpn1
+    mailNickname = $BreakGlassUser1
+    accountEnabled = $true
+    passwordProfile = @{
+        password = $pw1
+        forceChangePasswordNextSignIn = $false
+    }
+}
 ```
 
 ```powershell
@@ -142,12 +146,16 @@ $pw2  = [Runtime.InteropServices.Marshal]::PtrToStringBSTR(
         )
 
 # 作成
-New-MgUser `
-  -DisplayName $BreakGlassDisplayName2 `
-  -UserPrincipalName $BreakGlassUpn2 `
-  -MailNickname $BreakGlassUser2 `
-  -AccountEnabled $true `
-  -PasswordProfile @{ Password = $pw2; ForceChangePasswordNextSignIn = $false }
+New-MgUser -BodyParameter @{
+    displayName = $BreakGlassDisplayName2
+    userPrincipalName = $BreakGlassUpn2
+    mailNickname = $BreakGlassUser2
+    accountEnabled = $true
+    passwordProfile = @{
+        password = $pw2
+        forceChangePasswordNextSignIn = $false
+    }
+}
 ```
 
 ---
