@@ -68,7 +68,6 @@ $BreakGlassExemptGroupName = "sg-entra-breakglass-exempt"
 
 ```powershell
 # 接続コマンド: アカウント作成、グローバル管理者権限の付与を行うためのスコープを指定して接続
-Import-Module Microsoft.Graph
 Connect-MgGraph -Scopes "User.ReadWrite.All","Directory.ReadWrite.All","RoleManagement.ReadWrite.Directory" -NoWelcome
 (Get-MgContext | Select-Object TenantId, Account)
 
