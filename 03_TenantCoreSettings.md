@@ -35,7 +35,7 @@
 
 > 00_Initialization の Phase 0 を参照してください（同一内容を再掲しません）。
 
-- [00_Initialization.md #phase-0-tenant-variables]https://github.com/ryou-365/m365-initial-setup/blob/main/00_Initialization.md#phase-0-tenant-variablesedit-here-only)
+- [00_Initialization.md #phase-0-initial-setup-parameter-sheet-v10--tenant-variables](https://github.com/ryou-365/m365-initial-setup/blob/main/00_Initialization.md#phase-0-initial-setup-parameter-sheet-v10--tenant-variables)
 
 ---
 
