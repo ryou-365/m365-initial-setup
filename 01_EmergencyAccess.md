@@ -29,37 +29,7 @@ CA 本体・MFA 強制は README に定義された通り、後続の `04_Condit
 
 # Phase 0: Tenant Variables（EDIT HERE ONLY）
 
-```powershell
-# カスタムドメイン
-$TenantCustomDomain   = "example.com"
-
-# onmicrosoft.com のサブドメイン
-$TenantOnMicrosoft    = "example-fallback"
-
-# 管理者アカウント名
-$AdminUser            = "admin"
-
-# 緊急アクセス用アカウント名（技術識別子）
-$BreakGlassUser1      = "breakglass1"
-$BreakGlassUser2      = "breakglass2"
-
-# 緊急アクセス用表示名（役割明示）
-$BreakGlassDisplayName1 = "BreakGlass Account 1"
-$BreakGlassDisplayName2 = "BreakGlass Account 2"
-
-# --- 自動定義（編集禁止） ---
-$TenantFallbackDomain = "$TenantOnMicrosoft.onmicrosoft.com"
-$AdminUpn             = "$AdminUser@$TenantCustomDomain"
-$SPOAdminUrl          = "https://$TenantOnMicrosoft-admin.sharepoint.com"
-$SPORootUrl           = "https://$TenantOnMicrosoft.sharepoint.com"
-
-$BreakGlassUpn1       = "$BreakGlassUser1@$TenantFallbackDomain"
-$BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"
-
-# break-glass 除外用グループ
-$BreakGlassExemptGroupName = "BreakGlass Exempt (CA Exclusion)"
-$BreakGlassExemptGroupMailNick = "sg-entra-breakglass-exempt"
-```
+- [00_Initialization.md #phase-0-tenant-variablesedit-here-only](https://github.com/ryou-365/m365-initial-setup/blob/main/00_Initialization.md#phase-0-tenant-variablesedit-here-only)
 
 ---
 
