@@ -29,7 +29,7 @@ CA 本体・MFA 強制は README に定義された通り、後続の `04_Condit
 
 # Phase 0: Tenant Variables（EDIT HERE ONLY）
 
-- [00_Initialization.md #phase-0-tenant-variablesedit-here-only](https://github.com/ryou-365/m365-initial-setup/blob/main/00_Initialization.md#phase-0-tenant-variablesedit-here-only)
+- [00_Initialization.md #phase-0-initial-setup-parameter-sheet-v10--tenant-variables](https://github.com/ryou-365/m365-initial-setup/blob/main/00_Initialization.md#phase-0-initial-setup-parameter-sheet-v10--tenant-variables)
 
 ---
 
