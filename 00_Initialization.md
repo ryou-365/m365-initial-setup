@@ -128,40 +128,116 @@ Update-Module Microsoft.Online.SharePoint.PowerShell -Scope AllUsers -Force
 > * 接続の際に利用するMSALが混在すると認証時に高い確率でトラブルが発生します。
 
 
-## Phase 0: Tenant Variables（EDIT HERE ONLY）
+## Phase 0: Initial Setup Parameter Sheet v1.0  (Tenant Variables)
 
 - 下記をコピーして手元で自身の環境に応じた設定を記述し、接続前にPowerShellで実行してください。
 
 ```powershell
-# ==============================
-# Tenant Core（必須）
-# ==============================
+<# =====================================================================
+Initial Setup Parameter Sheet v1.0  (Tenant Variables)
 
-# カスタムドメイン（例: example.com）
-$TenantCustomDomain   = "example.com"
+目的:
+- 初期構築の「設計決定事項」を1箇所に集約し、再現性と説明責任を確保する。
+- EDIT HERE ONLY 以外を編集しないことで、派生値の整合性を崩さない。
 
-# onmicrosoft.com のサブドメイン（例: example-fallback → example-fallback.onmicrosoft.com）
-$TenantOnMicrosoft    = "example-fallback"
+運用ルール:
+- 編集してよいのは「EDIT HERE ONLY」だけ。
+- 変更したら、このファイルの末尾 Change Log に理由と日付を残す（任意だが推奨）。
+===================================================================== #>
 
-# 管理者アカウント名（例: admin → admin@example.com）
-$AdminUser            = "admin"
+# ==========================================================
+# EDIT HERE ONLY: 00_Initialization: Tenant Identity
+# ==========================================================
+# [設計意図]
+# - TenantCustomDomain は社内利用の主ドメイン。
+# - TenantOnMicrosoft はテナント作成時に決まる固定値（後から変更不可）。
 
-# ==============================
-# Emergency Access（break-glass）
-# ==============================
+$TenantCustomDomain = "example.com"
+$TenantOnMicrosoft  = "example-fallback"
 
-# 緊急アクセス用アカウント名（技術識別子）
-$BreakGlassUser1      = "breakglass1"
-$BreakGlassUser2      = "breakglass2"
+# [設計意図]
+# - AdminUser は初期構築の作業主体アカウント。
+# - break-glass は 01_EmergencyAccess で作成する「最後の入口」なので、命名は固定化する。
 
-# 緊急アクセス用表示名（役割明示）
+$AdminUser = "admin"
+
+$BreakGlassUser1 = "breakglass1"
+$BreakGlassUser2 = "breakglass2"
+
 $BreakGlassDisplayName1 = "BreakGlass Account 1"
 $BreakGlassDisplayName2 = "BreakGlass Account 2"
 
-# ==============================
-# 自動定義（編集禁止）
-# ==============================
+# [設計意図]
+# - CA除外は「グループ1つ」に集約し、レビュー対象をルール変更のみに限定する。
+$BreakGlassExemptGroupName     = "BreakGlass Exempt (CA Exclusion)"
+$BreakGlassExemptGroupMailNick = "sg-entra-breakglass-exempt"
 
+
+# ==========================================================
+# EDIT HERE ONLY: 03_TenantCoreSettings: Notification Mailboxes
+# ==========================================================
+# [設計方針]
+# - 通知先は「共有メールボックス + 外部自動転送」で担保する。
+# - 外部アドレスは“アクセス権”ではなく“転送先”で扱う（外部ユーザーに権限は付与しない）。
+# - 各共有メールボックスの内部メンバー / 外部転送先は “それぞれ異なる前提”。
+
+# 技術運用通知用
+$SharedMailbox_TechOps_DisplayName = "IT Operations"
+$SharedMailbox_TechOps_Alias       = "it-ops"
+$SharedMailbox_TechOps_InternalMembers = @(
+  # "user1@example.com"
+)
+$SharedMailbox_TechOps_ExternalForwarding = @(
+  # "external-tech@example-external.net"
+)
+
+# セキュリティ通知用
+$SharedMailbox_SecOps_DisplayName = "Security Operations"
+$SharedMailbox_SecOps_Alias       = "sec-ops"
+$SharedMailbox_SecOps_InternalMembers = @(
+  # "user2@example.com"
+)
+$SharedMailbox_SecOps_ExternalForwarding = @(
+  # "external-sec@example-external.net"
+)
+
+# プライバシー窓口用
+$SharedMailbox_Privacy_DisplayName = "Privacy Contact"
+$SharedMailbox_Privacy_Alias       = "privacy"
+$SharedMailbox_Privacy_InternalMembers = @(
+  # "user3@example.com"
+)
+$SharedMailbox_Privacy_ExternalForwarding = @(
+  # "external-privacy@example-external.net"
+)
+
+
+# ==========================================================
+# EDIT HERE ONLY: 03_TenantCoreSettings: Organization Profile / SPO Defaults
+# ==========================================================
+# [設計意図]
+# - preferredLanguage: 管理・通知メッセージの既定言語（運用チームの言語に揃える）
+$OrgPreferredLanguage = "ja-JP"
+
+# [設計意図]
+# - Privacy は外部提示情報。メールは privacy@ に統一し、URLは公開ポリシーを指定する。
+$OrgPrivacyStatementUrl = "https://example.com/privacy"
+
+# [選定基準: SharePoint/OneDrive 共有リンク既定]
+# - DefaultSharingLinkType:
+#   Direct  : 共有先を明示（リンク流出事故を起こしにくい）= 初期値推奨
+#   Internal: 社内コラボ優先（内部拡散リスク増）
+#   AnonymousAccess: 匿名リンク寄りで事故りやすい = 初期値非推奨
+# - DefaultLinkPermission:
+#   View : 閲覧既定（編集は意図したときだけ選ばせる）= 初期値推奨
+#   Edit : 編集既定（誤共有時の破壊力が大きい）
+$SPO_DefaultSharingLinkType = "Direct"
+$SPO_DefaultLinkPermission  = "View"
+
+
+# ==========================================================
+# DO NOT EDIT: Derived Values（自動定義）
+# ==========================================================
 $TenantFallbackDomain = "$TenantOnMicrosoft.onmicrosoft.com"
 $AdminUpn             = "$AdminUser@$TenantCustomDomain"
 
@@ -171,101 +247,19 @@ $SPORootUrl           = "https://$TenantOnMicrosoft.sharepoint.com"
 $BreakGlassUpn1       = "$BreakGlassUser1@$TenantFallbackDomain"
 $BreakGlassUpn2       = "$BreakGlassUser2@$TenantFallbackDomain"
 
-# break-glass 除外用グループ（CA で除外対象を集約するため）
-$BreakGlassExemptGroupName     = "BreakGlass Exempt (CA Exclusion)"
-$BreakGlassExemptGroupMailNick = "sg-entra-breakglass-exempt"
+# 共有メールボックスのアドレス（ドメイン追従）
+$SharedMailbox_TechOps_Address  = "$SharedMailbox_TechOps_Alias@$TenantCustomDomain"
+$SharedMailbox_SecOps_Address   = "$SharedMailbox_SecOps_Alias@$TenantCustomDomain"
+$SharedMailbox_Privacy_Address  = "$SharedMailbox_Privacy_Alias@$TenantCustomDomain"
 
-# ==============================
-# 03_TenantCoreSettings: 通知用 共有メールボックス定義
-# ==============================
-# ※ ここで定義するアドレスは「テナント内の共有メールボックス」を前提とする
-# ※ 外部通知は「共有メールボックス → 外部自動転送」で担保する（外部ユーザーに権限は付与しない）
-
-# 技術運用通知用 共有メールボックス
-$SharedMailbox_TechOps_DisplayName = "IT Operations"
-$SharedMailbox_TechOps_Alias       = "it-ops"
-$SharedMailbox_TechOps_Address     = "it-ops@$TenantCustomDomain"
-
-# セキュリティ通知用 共有メールボックス
-$SharedMailbox_SecOps_DisplayName  = "Security Operations"
-$SharedMailbox_SecOps_Alias        = "sec-ops"
-$SharedMailbox_SecOps_Address      = "sec-ops@$TenantCustomDomain"
-
-# プライバシー窓口用 共有メールボックス
-$SharedMailbox_Privacy_DisplayName = "Privacy Contact"
-$SharedMailbox_Privacy_Alias       = "privacy"
-$SharedMailbox_Privacy_Address     = "privacy@$TenantCustomDomain"
-
-# ==============================
-# 03_TenantCoreSettings: 内部メンバー（共有メールボックスへ付与）
-# ==============================
-# ※ 各共有メールボックスごとに個別定義する（職務分掌が分かれる前提）
-# ※ ここには「テナント内ユーザーのUPN」のみを指定する
-
-$SharedMailbox_TechOps_InternalMembers = @(
-  $AdminUpn
-)
-
-$SharedMailbox_SecOps_InternalMembers = @(
-  $AdminUpn
-)
-
-$SharedMailbox_Privacy_InternalMembers = @(
-  $AdminUpn
-)
-
-# ==============================
-# 03_TenantCoreSettings: 外部転送先（テナント障害時の独立経路）
-# ==============================
-# ※ 各共有メールボックスごとに個別定義する（外部委託/SOC/顧問などを想定）
-# ※ ここにはテナント外メールアドレスを指定する
-
-$SharedMailbox_TechOps_ExternalForwarding = @(
-  "external-tech@example-external.net"
-)
-
-$SharedMailbox_SecOps_ExternalForwarding = @(
-  "external-sec@example-external.net"
-)
-
-$SharedMailbox_Privacy_ExternalForwarding = @(
-  "external-privacy@example-external.net"
-)
-
-# ==============================
-# 03_TenantCoreSettings: Organization Profile 設定（Graph）
-# ==============================
-# ※ Microsoft Graph の Organization（組織）オブジェクトに設定する値
-# ※ Tech/Sec の通知先は共有メールボックスを直接設定するため「専用変数」は持たない（二重管理回避）
-# ※ Privacy は外部提示情報として URL を必ず持つ
-
-# 既定言語（例: ja-JP）
-$OrgPreferredLanguage = "ja-JP"
-
-# プライバシー（外部提示用）
-# ※ 命名一貫性のため Org 系変数として保持し、共有メールボックスのアドレスを格納する
+# Organization の Privacy contact email は命名一貫性のため Org系として保持
 $OrgPrivacyContactEmail = $SharedMailbox_Privacy_Address
-$OrgPrivacyStatementUrl = "https://$TenantCustomDomain/privacy"
 
-# ==============================
-# 03_TenantCoreSettings: SharePoint/OneDrive 共有リンク既定（SPO）
-# ==============================
-# これは「共有できる範囲（外部共有可否など）」ではなく、
-# ユーザーが共有ボタンを押したときの“デフォルトの作られ方”を決める設定。
 
-# 選定基準（初期値の考え方）:
-# - Direct: 共有対象（相手）を明示する方向に寄せ、リンク流出時の事故を起こしにくくする
-# - Internal: 社内コラボ優先（社内拡散リスクは上がる）
-# - AnonymousAccess: 匿名リンク寄りになり事故りやすいので初期値には非推奨
-#
-# - View: 閲覧を既定にして、編集は意図したときだけ選ばせる
-# - Edit: 編集が既定になり誤共有時の破壊力が大きい
-
-# DefaultSharingLinkType: Direct / Internal / AnonymousAccess
-$SPO_DefaultSharingLinkType = "Direct"
-
-# DefaultLinkPermission: View / Edit
-$SPO_DefaultLinkPermission  = "View"
+# ==========================================================
+# Change Log（任意）
+# ==========================================================
+# 2026-02-17: v1.0 作成（初期構築パラメータシート化）
 
 ```
 
